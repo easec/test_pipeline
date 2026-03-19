@@ -64,25 +64,25 @@ stages:
             az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
             echo "Snapshot storage exists."
 
-    - ${{ if eq(parameters.targetEnv, 'prod') }}:
-      - deployment: DeployProd
-        displayName: Deploy PROD (requires approval)
-        environment: iscala-archive-prod
-        pool:
-          name: easec-pool
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-              - checkout: self
+  - ${{ if eq(parameters.targetEnv, 'prod') }}:
+    - deployment: DeployProd
+      displayName: Deploy PROD (requires approval)
+      environment: iscala-archive-prod
+      pool:
+        name: easec-pool
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - checkout: self
 
-              - task: AzureCLI@2
-                displayName: Validate snapshot storage exists
-                inputs:
-                  azureSubscription: ${{ parameters.azureServiceConnection }}
-                  scriptType: bash
-                  scriptLocation: inlineScript
-                  inlineScript: |
-                    set -euo pipefail
-                    az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
-                    echo "Snapshot storage exists."
+            - task: AzureCLI@2
+              displayName: Validate snapshot storage exists
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  set -euo pipefail
+                  az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
+                  echo "Snapshot storage exists."
