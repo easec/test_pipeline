@@ -7,7 +7,7 @@ parameters:
   default: dev
   values:
   - dev
-  #- prod
+  - prod
 
 - name: azureServiceConnection
   type: string
@@ -51,14 +51,13 @@ stages:
         name: easec-pool
       steps:
       - checkout: self
-	  
-		- task: AzureCLI@2
-		  displayName: Validate snapshot storage exists
-          inputs:
-            azureSubscription: ${{ parameters.azureServiceConnection }}
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              set -euo pipefail
-              az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
-              echo "Snapshot storage exists."
+      - task: AzureCLI@2
+        displayName: Validate snapshot storage exists
+        inputs:
+          azureSubscription: ${{ parameters.azureServiceConnection }}
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            set -euo pipefail
+            az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
+            echo "Snapshot storage exists."
