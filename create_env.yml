@@ -1,0 +1,64 @@
+trigger:
+- main
+
+parameters:
+- name: targetEnv
+  type: string
+  default: dev
+  values:
+  - dev
+  - prod
+
+- name: azureServiceConnection
+  type: string
+  default: Azure-Service-Connection-Sub
+
+variables:
+# DEV
+- ${{ if eq(parameters.targetEnv, 'dev') }}:
+  - group: variable_iScalaArchive
+  - name: resourceGroupName
+    value: rg-iscala-archive-dev
+  - name: storageAccount
+    value: stiscalasnapshotdev
+  - name: rgLocation
+    value: swedencentral
+
+# PROD
+- ${{ if eq(parameters.targetEnv, 'prod') }}:
+  - group: variable_iScalaArchive-prod
+  - name: resourceGroupName
+    value: rg-iscala-archive-prod
+  - name: rgLocation
+    value: swedencentral
+
+
+- name: deploymentPrincipalObjectId
+  value: 94f97b9f-b688-4f99-a3ff-64e0e8a945d8
+
+- name: storageAccountResourceId
+  value: /subscriptions/$(subscriptionId)/resourceGroups/$(resourceGroupName)/providers/Microsoft.Storage/storageAccounts/$(storageAccount)
+
+stages:
+- stage: Deploy
+  displayName: Deploy ${{ parameters.targetEnv }}
+  jobs:
+
+  - ${{ if eq(parameters.targetEnv, 'dev') }}:
+    - job: DeployDev
+      displayName: Deploy DEV
+      pool:
+        name: easec-pool
+      steps:
+      - checkout: self
+	  
+		- task: AzureCLI@2
+		  displayName: Validate snapshot storage exists
+          inputs:
+            azureSubscription: ${{ parameters.azureServiceConnection }}
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              set -euo pipefail
+              az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
+              echo "Snapshot storage exists."
