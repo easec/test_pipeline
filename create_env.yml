@@ -7,7 +7,7 @@ parameters:
   default: dev
   values:
   - dev
-  - prod
+  #- prod
 
 - name: azureServiceConnection
   type: string
