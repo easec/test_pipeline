@@ -84,13 +84,18 @@ stages:
                 scriptLocation: inlineScript
                 inlineScript: |
                   set -e
-                  echo "Checking resource group: "($resourceGroupName)"
-                  if [ "$(az group exists --name "($resourceGroupName"))" = "true" ]; then
-                    echo "Resource group already exists: "($resourceGroupName)"
+                  RESOURCE_GROUP="$(rgNameProd)"
+                  LOCATION="$(rgLocationProd)"
+                  STORAGE_ACCOUNT="$(storageAccountProd)"
+                  CONTAINER_NAME="$(containerName)"
+
+                  echo "Checking resource group: $RESOURCE_GROUP"
+                  if [ "$(az group exists --name "$RESOURCE_GROUP")" = "true" ]; then
+                    echo "Resource group already exists: "$RESOURCE_GROUP"
                   else
-                    echo "Creating resource group: "($resourceGroupName)""
+                    echo "Creating resource group: "$RESOURCE_GROUP"
                     az group create \
-                        --name "($resourceGroupName)" \
-                        --location "($rgLocation)" \
+                        --name "$RESOURCE_GROUP" \
+                        --location "$LOCATION" \
                         --output none
                     fi
