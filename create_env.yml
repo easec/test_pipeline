@@ -77,12 +77,20 @@ stages:
             - checkout: self
 
             - task: AzureCLI@2
-              displayName: Validate snapshot storage exists
+              displayName: Ensure resources exist
               inputs:
                 azureSubscription: ${{ parameters.azureServiceConnection }}
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  set -euo pipefail
-                  az storage account show -n "$(storageAccount)" -g "$(resourceGroupName)" -o none
-                  echo "Snapshot storage exists."
+                  set -e
+                  echo "Checking resource group: $resourceGroupName"
+                  if [ "$(az group exists --name "$RESOURCE_GROUP")" = "true" ]; then
+                    echo "Resource group already exists: $resourceGroupName"
+                  else
+                    echo "Creating resource group: $resourceGroupName"
+                    az group create \
+                        --name "$resourceGroupName" \
+                        --location "$rgLocation" \
+                        --output none
+                    fi
