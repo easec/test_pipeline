@@ -84,9 +84,9 @@ stages:
                 scriptLocation: inlineScript
                 inlineScript: |
                   set -e
-                  RESOURCE_GROUP="$(rgNameProd)"
-                  LOCATION="$(rgLocationProd)"
-                  STORAGE_ACCOUNT="$(storageAccountProd)"
+                  RESOURCE_GROUP="$(resourceGroupName)"
+                  LOCATION="$(rgLocation)"
+                  STORAGE_ACCOUNT="$(storageAccount)"
                   CONTAINER_NAME="$(containerName)"
 
                   echo "Checking resource group: $RESOURCE_GROUP"
