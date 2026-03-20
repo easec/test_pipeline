@@ -98,4 +98,4 @@ stages:
                         --name "$RESOURCE_GROUP" \
                         --location "$LOCATION" \
                         --output none
-                    fi
+                  fi
