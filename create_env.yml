@@ -91,9 +91,9 @@ stages:
 
                   echo "Checking resource group: $RESOURCE_GROUP"
                   if [ "$(az group exists --name "$RESOURCE_GROUP")" = "true" ]; then
-                    echo "Resource group already exists: "$RESOURCE_GROUP"
+                    echo "Resource group already exists: $RESOURCE_GROUP"
                   else
-                    echo "Creating resource group: "$RESOURCE_GROUP"
+                    echo "Creating resource group: $RESOURCE_GROUP"
                     az group create \
                         --name "$RESOURCE_GROUP" \
                         --location "$LOCATION" \
