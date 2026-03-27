@@ -20,7 +20,7 @@ variables:
   - name: sourceStorageAccount
     value: snapshottestsa
   - name: sourceContainer
-    value: snapshot
+    value: iscala-archive
   - name: destinationStorageAccount
     value: stiscalasnapshotdev
   - name: containerName
@@ -32,9 +32,9 @@ variables:
   - name: sourceStorageAccount
     value: snapshottestsa
   - name: sourceContainer
-    value: snapshot
+    value: iscala-archive
   - name: destinationStorageAccount
-    value: stiscalasnapshotdev
+    value: stiscalasnapshotprod
   - name: containerName
     value: snapshot
 
