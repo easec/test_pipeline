@@ -58,35 +58,35 @@ stages:
       steps:
       - checkout: self
       - task: AzureCLI@2
-      displayName: Copy blobs from source container to destination container with AzCopy
-      inputs:
-      azureSubscription: ${{ parameters.azureServiceConnection }}
-      scriptType: "pscore"
-      scriptLocation: "inlineScript"
-      inlineScript: |
-        $ErrorActionPreference = "Stop"
+        displayName: Copy blobs from source container to destination container with AzCopy
+        inputs:
+          azureSubscription: ${{ parameters.azureServiceConnection }}
+          scriptType: "pscore"
+          scriptLocation: "inlineScript"
+          inlineScript: |
+            $ErrorActionPreference = "Stop"
 
-        # Source / destination
-        $srcAccount   = "$(sourceStorageAccount)"
-        $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
-        $dstAccount   = "$(destinationStorageAccount)"
-        $dstContainer = "$(containerName)"     # Working container (NOT WORM)
 
-        Write-Host "Using Azure CLI login for AzCopy"
-        $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
+            $srcAccount   = "$(sourceStorageAccount)"
+            $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
+            $dstAccount   = "$(destinationStorageAccount)"
+            $dstContainer = "$(containerName)"     # Working container (NOT WORM)
 
-        # Often needed when using Entra auth with AzCopy
-        $tenantId = az account show --query tenantId -o tsv
-        $Env:AZCOPY_TENANT_ID = $tenantId
+            Write-Host "Using Azure CLI login for AzCopy"
+            $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
 
-        Write-Host "AzCopy version:"
-        azcopy --version
+              # Often needed when using Entra auth with AzCopy
+            $tenantId = az account show --query tenantId -o tsv
+            $Env:AZCOPY_TENANT_ID = $tenantId
 
-        $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
-        $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+            Write-Host "AzCopy version:"
+            azcopy --version
 
-        Write-Host "Copying from $srcUrl to $dstUrl"
-        azcopy copy $srcUrl $dstUrl --recursive=true
+            $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
+            $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+
+            Write-Host "Copying from $srcUrl to $dstUrl"
+            azcopy copy $srcUrl $dstUrl --recursive=true
 
   - ${{ if eq(parameters.targetEnv, 'prod') }}:
     - deployment: DeployProd
@@ -100,33 +100,33 @@ stages:
             steps:
             - checkout: self
 
-    - task: AzureCLI@2
-        displayName: Copy blobs from source container to destination container with AzCopy
-        inputs:
-        azureSubscription: ${{ parameters.azureServiceConnection }}
-        scriptType: "pscore"
-        scriptLocation: "inlineScript"
-        inlineScript: |
-          $ErrorActionPreference = "Stop"
+            - task: AzureCLI@2
+              displayName: Copy blobs from source container to destination container with AzCopy
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                scriptType: "pscore"
+                scriptLocation: "inlineScript"
+                inlineScript: |
+                  $ErrorActionPreference = "Stop"
 
-          # Source / destination
-          $srcAccount   = "$(sourceStorageAccount)"
-          $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
-          $dstAccount   = "$(destinationStorageAccount)"
-          $dstContainer = "$(containerName)"     # Working container (NOT WORM)
 
-          Write-Host "Using Azure CLI login for AzCopy"
-          $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
+                  $srcAccount   = "$(sourceStorageAccount)"
+                  $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
+                  $dstAccount   = "$(destinationStorageAccount)"
+                  $dstContainer = "$(containerName)"     # Working container (NOT WORM)
 
-          # Often needed when using Entra auth with AzCopy
-          $tenantId = az account show --query tenantId -o tsv
-          $Env:AZCOPY_TENANT_ID = $tenantId
+                  Write-Host "Using Azure CLI login for AzCopy"
+                  $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
 
-          Write-Host "AzCopy version:"
-          azcopy --version
+                    # Often needed when using Entra auth with AzCopy
+                  $tenantId = az account show --query tenantId -o tsv
+                  $Env:AZCOPY_TENANT_ID = $tenantId
 
-          $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
-          $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+                  Write-Host "AzCopy version:"
+                  azcopy --version
 
-          Write-Host "Copying from $srcUrl to $dstUrl"
-          azcopy copy $srcUrl $dstUrl --recursive=true
+                  $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
+                  $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+
+                  Write-Host "Copying from $srcUrl to $dstUrl"
+                  azcopy copy $srcUrl $dstUrl --recursive=true
