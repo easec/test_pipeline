@@ -1,0 +1,132 @@
+trigger:
+- main
+
+parameters:
+- name: targetEnv
+  type: string
+  default: dev
+  values:
+  - dev
+  - prod
+
+- name: azureServiceConnection
+  type: string
+  default: Azure-Service-Connection-Sub
+
+variables:
+# DEV
+- ${{ if eq(parameters.targetEnv, 'dev') }}:
+  - group: variable_iScalaArchive
+  - name: sourceStorageAccount
+    value: snapshottestsa
+  - name: sourceContainer
+    value: snapshot
+  - name: destinationStorageAccount
+    value: stiscalasnapshotdev
+  - name: containerName
+    value: snapshot
+
+# PROD
+- ${{ if eq(parameters.targetEnv, 'prod') }}:
+  - group: variable_iScalaArchive
+  - name: sourceStorageAccount
+    value: snapshottestsa
+  - name: sourceContainer
+    value: snapshot
+  - name: destinationStorageAccount
+    value: stiscalasnapshotdev
+  - name: containerName
+    value: snapshot
+
+
+- name: deploymentPrincipalObjectId
+  value: 94f97b9f-b688-4f99-a3ff-64e0e8a945d8
+
+- name: storageAccountResourceId
+  value: /subscriptions/$(subscriptionId)/resourceGroups/$(resourceGroupName)/providers/Microsoft.Storage/storageAccounts/$(storageAccount)
+
+stages:
+- stage: Deploy
+  displayName: Deploy ${{ parameters.targetEnv }}
+  jobs:
+
+  - ${{ if eq(parameters.targetEnv, 'dev') }}:
+    - job: DeployDev
+      displayName: Deploy DEV
+      pool:
+        name: easec-pool
+      steps:
+      - checkout: self
+      - task: AzureCLI@2
+	  displayName: Copy blobs from source container to destination container with AzCopy
+	  inputs:
+		azureSubscription: ${{ parameters.azureServiceConnection }}
+		scriptType: "pscore"
+		scriptLocation: "inlineScript"
+		inlineScript: |
+		  $ErrorActionPreference = "Stop"
+
+		  # Source / destination
+		  $srcAccount   = "$(sourceStorageAccount)"
+		  $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
+		  $dstAccount   = "$(destinationStorageAccount)"
+		  $dstContainer = "$(containerName)"     # Working container (NOT WORM)
+
+		  Write-Host "Using Azure CLI login for AzCopy"
+		  $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
+
+		  # Often needed when using Entra auth with AzCopy
+		  $tenantId = az account show --query tenantId -o tsv
+		  $Env:AZCOPY_TENANT_ID = $tenantId
+
+		  Write-Host "AzCopy version:"
+		  azcopy --version
+
+		  $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
+		  $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+
+		  Write-Host "Copying from $srcUrl to $dstUrl"
+		  azcopy copy $srcUrl $dstUrl --recursive=true
+
+  - ${{ if eq(parameters.targetEnv, 'prod') }}:
+    - deployment: DeployProd
+      displayName: Deploy PROD (requires approval)
+      environment: iscala-archive-prod
+      pool:
+        name: easec-pool
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - checkout: self
+
+- task: AzureCLI@2
+	  displayName: Copy blobs from source container to destination container with AzCopy
+	  inputs:
+		azureSubscription: ${{ parameters.azureServiceConnection }}
+		scriptType: "pscore"
+		scriptLocation: "inlineScript"
+		inlineScript: |
+		  $ErrorActionPreference = "Stop"
+
+		  # Source / destination
+		  $srcAccount   = "$(sourceStorageAccount)"
+		  $srcContainer = "$(sourceContainer)"   # WORM container (immutable)
+		  $dstAccount   = "$(destinationStorageAccount)"
+		  $dstContainer = "$(containerName)"     # Working container (NOT WORM)
+
+		  Write-Host "Using Azure CLI login for AzCopy"
+		  $Env:AZCOPY_AUTO_LOGIN_TYPE = "AZCLI"
+
+		  # Often needed when using Entra auth with AzCopy
+		  $tenantId = az account show --query tenantId -o tsv
+		  $Env:AZCOPY_TENANT_ID = $tenantId
+
+		  Write-Host "AzCopy version:"
+		  azcopy --version
+
+		  $srcUrl = "https://$srcAccount.blob.core.windows.net/$srcContainer"
+		  $dstUrl = "https://$dstAccount.blob.core.windows.net/$dstContainer"
+
+		  Write-Host "Copying from $srcUrl to $dstUrl"
+		  azcopy copy $srcUrl $dstUrl --recursive=true
