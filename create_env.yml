@@ -116,6 +116,14 @@ stages:
               --query "exists" \
               --output tsv)
 
+            echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
+            CONTAINER_EXISTS=$(az storage container exists \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login \
+              --name "$CONTAINER_NAME" \
+              --query "exists" \
+              --output tsv)
+
             if [ "$CONTAINER_EXISTS" = "true" ]; then
               echo "Container already exists: $CONTAINER_NAME"
             else
@@ -124,26 +132,6 @@ stages:
                 --account-name "$STORAGE_ACCOUNT" \
                 --auth-mode login \
                 --name "$CONTAINER_NAME" \
-                --output none
-            fi
-
-            echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
-            echo "Storage account (Hot): $S_STORAGE_ACCOUNT"
-            SOURCE_CONTAINER_EXISTS=$(az storage container exists \
-              --account-name "$S_STORAGE_ACCOUNT" \
-              --auth-mode login \
-              --name "$SOURCE_CONTAINER_NAME" \
-              --query "exists" \
-              --output tsv)
-
-            if [ "$SOURCE_CONTAINER_EXISTS" = "true" ]; then
-              echo "Container already exists: $SOURCE_CONTAINER_NAME"
-            else
-              echo "Creating blob container: $SOURCE_CONTAINER_NAME"
-              az storage container create \
-                --account-name "$SOURCE_STORAGE_ACCOUNT" \
-                --auth-mode login \
-                --name "$SOURCE_CONTAINER_NAME" \
                 --output none
             fi
 
