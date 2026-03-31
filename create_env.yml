@@ -116,8 +116,7 @@ stages:
               --query "exists" \
               --output tsv)
 
-            echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
-            echo "Checking Storage account for snapshot (Hot): $SOURCE_STORAGE_ACCOUNT"           
+            echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"         
             CONTAINER_EXISTS=$(az storage container exists \
               --account-name "$SOURCE_STORAGE_ACCOUNT" \
               --auth-mode login \
