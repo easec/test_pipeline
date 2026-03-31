@@ -76,7 +76,7 @@ stages:
             LOCATION="$(rgLocation)"
             STORAGE_ACCOUNT="$(storageAccount)"
             CONTAINER_NAME="$(containerName)"
-            S_STORAGE_ACCOUNT="($sStorageAccount)"
+            SOURCE_STORAGE_ACCOUNT="($sourceStorageAccount)"
             SOURCE_CONTAINER_NAME="$(sourceContainerName)"
 
             echo "Checking resource group: $RESOURCE_GROUP"
@@ -117,21 +117,22 @@ stages:
               --output tsv)
 
             echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
+            echo "Checking Storage account for snapshot (Hot): $SOURCE_STORAGE_ACCOUNT"           
             CONTAINER_EXISTS=$(az storage container exists \
-              --account-name "$STORAGE_ACCOUNT" \
+              --account-name "$SOURCE_STORAGE_ACCOUNT" \
               --auth-mode login \
-              --name "$CONTAINER_NAME" \
+              --name "$SOURCE_CONTAINER_NAME" \
               --query "exists" \
               --output tsv)
 
             if [ "$CONTAINER_EXISTS" = "true" ]; then
-              echo "Container already exists: $CONTAINER_NAME"
+              echo "Container already exists: $SOURCE_CONTAINER_NAME"
             else
-              echo "Creating blob container: $CONTAINER_NAME"
+              echo "Creating blob container: $SOURCE_CONTAINER_NAME"
               az storage container create \
-                --account-name "$STORAGE_ACCOUNT" \
+                --account-name "$SOURCE_STORAGE_ACCOUNT" \
                 --auth-mode login \
-                --name "$CONTAINER_NAME" \
+                --name "$SOURCE_CONTAINER_NAME" \
                 --output none
             fi
 
