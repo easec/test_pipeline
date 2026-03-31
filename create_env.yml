@@ -40,7 +40,7 @@ variables:
     value: swedencentral
   - name: containerName
     value: snapshot
-  - name: sStorageAccount
+  - name: sourceStorageAccount
     value: snapshottestsa
   - name: sourceContainerName
     value: snapshot
