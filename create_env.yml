@@ -128,9 +128,9 @@ stages:
             fi
 
             echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
-            echo "Storage account (Hot): $S_STORAGE_ACCOUNT"
+            echo "Storage account (Hot): $_STORAGE_ACCOUNT"
             SOURCE_CONTAINER_EXISTS=$(az storage container exists \
-              --account-name "$SOURCE_STORAGE_ACCOUNT" \
+              --account-name "$S_STORAGE_ACCOUNT" \
               --auth-mode login \
               --name "$SOURCE_CONTAINER_NAME" \
               --query "exists" \
