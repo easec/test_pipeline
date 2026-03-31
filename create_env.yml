@@ -160,7 +160,10 @@ stages:
                   RESOURCE_GROUP="$(resourceGroupName)"
                   LOCATION="$(rgLocation)"
                   STORAGE_ACCOUNT="$(storageAccount)"
-                  CONTAINER_NAME="$(containerName)"
+                  CONTAINER_NAME="$(containerName)"            
+                  SOURCE_STORAGE_ACCOUNT="$(sourceStorageAccount)"
+                  SOURCE_CONTAINER_NAME="$(sourceContainerName)"
+
 
                   echo "Checking resource group: $RESOURCE_GROUP"
                   if [ "$(az group exists --name "$RESOURCE_GROUP")" = "true" ]; then
@@ -210,4 +213,23 @@ stages:
                       --output none
                   fi
 
+                  echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"         
+                  CONTAINER_EXISTS=$(az storage container exists \
+                    --account-name "$SOURCE_STORAGE_ACCOUNT" \
+                    --auth-mode login \
+                    --name "$SOURCE_CONTAINER_NAME" \
+                    --query "exists" \
+                    --output tsv)
+
+                  if [ "$CONTAINER_EXISTS" = "true" ]; then
+                    echo "Container already exists: $SOURCE_CONTAINER_NAME"
+                  else
+                    echo "Creating blob container: $SOURCE_CONTAINER_NAME"
+                    az storage container create \
+                      --account-name "$SOURCE_STORAGE_ACCOUNT" \
+                      --auth-mode login \
+                      --name "$SOURCE_CONTAINER_NAME" \
+                      --output none
+                  fi
+                  
                   echo "All resources are ready."
