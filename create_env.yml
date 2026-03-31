@@ -23,7 +23,7 @@ variables:
     value: stiscalasnapshotdev
   - name: rgLocation
     value: swedencentral
-  - name: sStorageAccount
+  - name: sourceStorageAccount
     value: snapshottestsa
   - name: sourceContainerName
     value: snapshot
@@ -40,7 +40,7 @@ variables:
     value: swedencentral
   - name: containerName
     value: snapshot
-  - name: sourceStorageAccount
+  - name: sStorageAccount
     value: snapshottestsa
   - name: sourceContainerName
     value: snapshot
@@ -128,7 +128,7 @@ stages:
             fi
 
             echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME"
-            echo "Storage account (Hot): $_STORAGE_ACCOUNT"
+            echo "Storage account (Hot): $S_STORAGE_ACCOUNT"
             SOURCE_CONTAINER_EXISTS=$(az storage container exists \
               --account-name "$S_STORAGE_ACCOUNT" \
               --auth-mode login \
