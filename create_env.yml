@@ -125,9 +125,9 @@ stages:
               --output tsv)
 
             if [ "$CONTAINER_EXISTS" = "true" ]; then
-              echo "Container already exists: $SOURCE_CONTAINER_NAME"
+              echo "Container already exists: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
             else
-              echo "Creating blob container: $SOURCE_CONTAINER_NAME"
+              echo "Creating blob container: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
               az storage container create \
                 --account-name "$SOURCE_STORAGE_ACCOUNT" \
                 --auth-mode login \
