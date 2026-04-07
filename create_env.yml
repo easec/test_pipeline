@@ -131,6 +131,7 @@ stages:
             fi
 
             echo "Validating shared source container: $SOURCE_CONTAINER_NAME in storage account: $SOURCE_STORAGE_ACCOUNT"
+
             SOURCE_CONTAINER_EXISTS=$(az storage container exists \
               --account-name "$SOURCE_STORAGE_ACCOUNT" \
               --auth-mode login \
@@ -141,9 +142,9 @@ stages:
             if [ "$SOURCE_CONTAINER_EXISTS" = "true" ]; then
               echo "Shared source container exists: $SOURCE_CONTAINER_NAME"
             else
-              echo "ERROR: Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
-              echo "Create it in the shared storage workflow, not in environment creation."
-              exit 1
+              echo "##[warning] Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
+              echo "##[warning] This container is created by the rehydration pipeline."
+              echo "##[warning] Run the rehydration pipeline before using this environment."
             fi
 
             echo "All environment resources are ready."
@@ -225,6 +226,7 @@ stages:
                   fi
 
                   echo "Validating shared source container: $SOURCE_CONTAINER_NAME in storage account: $SOURCE_STORAGE_ACCOUNT"
+
                   SOURCE_CONTAINER_EXISTS=$(az storage container exists \
                     --account-name "$SOURCE_STORAGE_ACCOUNT" \
                     --auth-mode login \
@@ -235,9 +237,9 @@ stages:
                   if [ "$SOURCE_CONTAINER_EXISTS" = "true" ]; then
                     echo "Shared source container exists: $SOURCE_CONTAINER_NAME"
                   else
-                    echo "ERROR: Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
-                    echo "Create it in the shared storage workflow, not in environment creation."
-                    exit 1
+                    echo "##[warning] Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
+                    echo "##[warning] This container is created by the rehydration pipeline."
+                    echo "##[warning] Run the rehydration pipeline before using this environment."
                   fi
 
                   echo "All environment resources are ready."
