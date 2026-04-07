@@ -14,6 +14,15 @@ parameters:
   default: Azure-Service-Connection-Sub
 
 variables:
+- name: sourceStorageResourceGroup
+  value: rg-iscala-archive
+
+- name: sourceStorageAccount
+  value: snapshottestsa
+
+- name: sourceContainerName
+  value: snapshot
+
 # DEV
 - ${{ if eq(parameters.targetEnv, 'dev') }}:
   - group: variable_iScalaArchive
@@ -23,28 +32,20 @@ variables:
     value: stiscalasnapshotdev
   - name: rgLocation
     value: swedencentral
-  - name: sourceStorageAccount
-    value: snapshottestsa
-  - name: sourceContainerName
-    value: snapshot
-
-- name: sourceStorageResourceGroup
-  value: rg-iscala-archive
+  - name: containerName
+    value: vhds
 
 # PROD
 - ${{ if eq(parameters.targetEnv, 'prod') }}:
   - group: variable_iScalaArchive-prod
   - name: resourceGroupName
     value: rg-iscala-archive-prod
+  - name: storageAccount
+    value: stiscalasnapshotprod
   - name: rgLocation
     value: swedencentral
   - name: containerName
-    value: snapshot
-  - name: sourceStorageAccount
-    value: snapshottestsa
-  - name: sourceContainerName
-    value: snapshot
-
+    value: vhds
 
 - name: deploymentPrincipalObjectId
   value: 94f97b9f-b688-4f99-a3ff-64e0e8a945d8
@@ -64,14 +65,16 @@ stages:
         name: easec-pool
       steps:
       - checkout: self
+
       - task: AzureCLI@2
-        displayName: Ensure resources exist, create if not
+        displayName: Ensure resources exist
         inputs:
           azureSubscription: ${{ parameters.azureServiceConnection }}
           scriptType: bash
           scriptLocation: inlineScript
           inlineScript: |
-            set -e
+            set -euo pipefail
+
             RESOURCE_GROUP="$(resourceGroupName)"
             LOCATION="$(rgLocation)"
             STORAGE_ACCOUNT="$(storageAccount)"
@@ -85,9 +88,9 @@ stages:
             else
               echo "Creating resource group: $RESOURCE_GROUP"
               az group create \
-                  --name "$RESOURCE_GROUP" \
-                  --location "$LOCATION" \
-                  --output none
+                --name "$RESOURCE_GROUP" \
+                --location "$LOCATION" \
+                --output none
             fi
 
             echo "Checking storage account: $STORAGE_ACCOUNT"
@@ -108,34 +111,42 @@ stages:
                 --output none
             fi
 
-            echo "Checking blob container: $CONTAINER_NAME"
-            CONTAINER_EXISTS=$(az storage container exists \
+            echo "Checking target blob container: $CONTAINER_NAME in storage account: $STORAGE_ACCOUNT"
+            TARGET_CONTAINER_EXISTS=$(az storage container exists \
               --account-name "$STORAGE_ACCOUNT" \
               --auth-mode login \
               --name "$CONTAINER_NAME" \
               --query "exists" \
               --output tsv)
 
-            echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"         
-            CONTAINER_EXISTS=$(az storage container exists \
+            if [ "$TARGET_CONTAINER_EXISTS" = "true" ]; then
+              echo "Target container already exists: $CONTAINER_NAME"
+            else
+              echo "Creating target container: $CONTAINER_NAME"
+              az storage container create \
+                --account-name "$STORAGE_ACCOUNT" \
+                --auth-mode login \
+                --name "$CONTAINER_NAME" \
+                --output none
+            fi
+
+            echo "Validating shared source container: $SOURCE_CONTAINER_NAME in storage account: $SOURCE_STORAGE_ACCOUNT"
+            SOURCE_CONTAINER_EXISTS=$(az storage container exists \
               --account-name "$SOURCE_STORAGE_ACCOUNT" \
               --auth-mode login \
               --name "$SOURCE_CONTAINER_NAME" \
               --query "exists" \
               --output tsv)
 
-            if [ "$CONTAINER_EXISTS" = "true" ]; then
-              echo "Container already exists: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
+            if [ "$SOURCE_CONTAINER_EXISTS" = "true" ]; then
+              echo "Shared source container exists: $SOURCE_CONTAINER_NAME"
             else
-              echo "Creating blob container: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
-              az storage container create \
-                --account-name "$SOURCE_STORAGE_ACCOUNT" \
-                --auth-mode login \
-                --name "$SOURCE_CONTAINER_NAME" \
-                --output none
+              echo "ERROR: Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
+              echo "Create it in the shared storage workflow, not in environment creation."
+              exit 1
             fi
 
-            echo "All resources are ready."
+            echo "All environment resources are ready."
 
   - ${{ if eq(parameters.targetEnv, 'prod') }}:
     - deployment: DeployProd
@@ -150,20 +161,20 @@ stages:
             - checkout: self
 
             - task: AzureCLI@2
-              displayName: Ensure resources exist, create if not
+              displayName: Ensure resources exist
               inputs:
                 azureSubscription: ${{ parameters.azureServiceConnection }}
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  set -e
+                  set -euo pipefail
+
                   RESOURCE_GROUP="$(resourceGroupName)"
                   LOCATION="$(rgLocation)"
                   STORAGE_ACCOUNT="$(storageAccount)"
-                  CONTAINER_NAME="$(containerName)"            
+                  CONTAINER_NAME="$(containerName)"
                   SOURCE_STORAGE_ACCOUNT="$(sourceStorageAccount)"
                   SOURCE_CONTAINER_NAME="$(sourceContainerName)"
-
 
                   echo "Checking resource group: $RESOURCE_GROUP"
                   if [ "$(az group exists --name "$RESOURCE_GROUP")" = "true" ]; then
@@ -171,9 +182,9 @@ stages:
                   else
                     echo "Creating resource group: $RESOURCE_GROUP"
                     az group create \
-                        --name "$RESOURCE_GROUP" \
-                        --location "$LOCATION" \
-                        --output none
+                      --name "$RESOURCE_GROUP" \
+                      --location "$LOCATION" \
+                      --output none
                   fi
 
                   echo "Checking storage account: $STORAGE_ACCOUNT"
@@ -194,18 +205,18 @@ stages:
                       --output none
                   fi
 
-                  echo "Checking blob container: $CONTAINER_NAME"
-                  CONTAINER_EXISTS=$(az storage container exists \
+                  echo "Checking target blob container: $CONTAINER_NAME in storage account: $STORAGE_ACCOUNT"
+                  TARGET_CONTAINER_EXISTS=$(az storage container exists \
                     --account-name "$STORAGE_ACCOUNT" \
                     --auth-mode login \
                     --name "$CONTAINER_NAME" \
                     --query "exists" \
                     --output tsv)
 
-                  if [ "$CONTAINER_EXISTS" = "true" ]; then
-                    echo "Container already exists: $CONTAINER_NAME"
+                  if [ "$TARGET_CONTAINER_EXISTS" = "true" ]; then
+                    echo "Target container already exists: $CONTAINER_NAME"
                   else
-                    echo "Creating blob container: $CONTAINER_NAME"
+                    echo "Creating target container: $CONTAINER_NAME"
                     az storage container create \
                       --account-name "$STORAGE_ACCOUNT" \
                       --auth-mode login \
@@ -213,23 +224,20 @@ stages:
                       --output none
                   fi
 
-                  echo "Checking blob container for snapshot (Hot): $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"         
-                  CONTAINER_EXISTS=$(az storage container exists \
+                  echo "Validating shared source container: $SOURCE_CONTAINER_NAME in storage account: $SOURCE_STORAGE_ACCOUNT"
+                  SOURCE_CONTAINER_EXISTS=$(az storage container exists \
                     --account-name "$SOURCE_STORAGE_ACCOUNT" \
                     --auth-mode login \
                     --name "$SOURCE_CONTAINER_NAME" \
                     --query "exists" \
                     --output tsv)
 
-                  if [ "$CONTAINER_EXISTS" = "true" ]; then
-                    echo "Container already exists: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
+                  if [ "$SOURCE_CONTAINER_EXISTS" = "true" ]; then
+                    echo "Shared source container exists: $SOURCE_CONTAINER_NAME"
                   else
-                    echo "Creating blob container: $SOURCE_CONTAINER_NAME" "in Storage account: $SOURCE_STORAGE_ACCOUNT"
-                    az storage container create \
-                      --account-name "$SOURCE_STORAGE_ACCOUNT" \
-                      --auth-mode login \
-                      --name "$SOURCE_CONTAINER_NAME" \
-                      --output none
+                    echo "ERROR: Shared source container does not exist: $SOURCE_STORAGE_ACCOUNT/$SOURCE_CONTAINER_NAME"
+                    echo "Create it in the shared storage workflow, not in environment creation."
+                    exit 1
                   fi
-                  
-                  echo "All resources are ready."
+
+                  echo "All environment resources are ready."
